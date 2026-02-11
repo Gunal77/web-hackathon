@@ -14,7 +14,7 @@ export function TrackingTimeline({ manu, isOfficialView }: Props) {
   return (
     <div className="space-y-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
       <h3 className="text-sm font-semibold text-slate-900">
-        Tracking for Manu {manu.id}
+        Tracking for Petition {manu.id}
       </h3>
       <ol className="space-y-3 text-sm text-slate-700">
         <li className="flex items-start gap-3">

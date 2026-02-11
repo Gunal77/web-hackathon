@@ -29,7 +29,7 @@ export function RiskHeatmapGrid({ districts }: Props) {
               {d.district}
             </div>
             <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-medium text-slate-700 shadow-sm">
-              {d.total} manus
+              {d.total} petitions
             </span>
           </div>
           <div className="mt-3 flex flex-wrap gap-3 text-xs text-slate-700">
@@ -52,7 +52,7 @@ export function RiskHeatmapGrid({ districts }: Props) {
       ))}
       {districts.length === 0 && (
         <p className="text-sm text-slate-600">
-          No manus available in the current selection.
+          No petitions available in the current selection.
         </p>
       )}
     </div>

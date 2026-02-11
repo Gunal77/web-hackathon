@@ -22,7 +22,7 @@ export function Sidebar() {
             TN Governance
           </div>
           <div className="text-sm font-semibold text-slate-900">
-            Risk &amp; Sentiment Manu
+            Risk &amp; Sentiment Petition
           </div>
         </div>
       </div>

@@ -31,4 +31,3 @@ export interface Manu {
   pendingDays: number;
   lastUpdatedDate?: string;
 }
-

@@ -19,7 +19,7 @@ export function ManuPriorityCardList({
       <p className="text-xs text-slate-500">
         Ranked by risk and sentiment priority for{" "}
         <span className="font-semibold">{scopeLabel}</span>. High-risk and
-        severe distress manus appear first.
+        severe distress petitions appear first.
       </p>
       <div className="grid gap-3 md:grid-cols-2">
         {sorted.map((m) => (
@@ -30,7 +30,7 @@ export function ManuPriorityCardList({
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Manu {m.id}
+                  Petition {m.id}
                 </p>
                 <p className="mt-1 text-sm font-semibold text-slate-900">
                   {m.departmentCategory} · {m.district} / {m.taluk}

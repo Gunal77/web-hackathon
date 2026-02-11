@@ -9,7 +9,7 @@ interface Props {
 
 export function ManuCitizenList({ manus, onViewTracking }: Props) {
   const headers = [
-    "Manu ID",
+    "Petition ID",
     "District / Taluk",
     "Department",
     "Status",

@@ -67,7 +67,7 @@ export default function CollectorDistrictPage() {
     <div className="space-y-6">
       <PageHeader
         title={`District detail – ${district}`}
-        subtitle="Taluk-wise comparison and risk-prioritised manu list."
+        subtitle="Taluk-wise comparison and risk-prioritised petition list."
         actions={
           <button
             type="button"
@@ -80,10 +80,10 @@ export default function CollectorDistrictPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-5">
-        <Card title="Total manus">
+        <Card title="Total petitions">
           <p className="text-2xl font-semibold text-slate-900">{total}</p>
         </Card>
-        <Card title="Open manus">
+        <Card title="Open petitions">
           <p className="text-2xl font-semibold text-orange-700">{open}</p>
         </Card>
         <Card title="Resolved">
@@ -107,7 +107,7 @@ export default function CollectorDistrictPage() {
         <Table
           headers={[
             "Taluk",
-            "Total manus",
+            "Total petitions",
             "High & critical",
             "Severe distress",
             "Avg pending days"
@@ -138,7 +138,7 @@ export default function CollectorDistrictPage() {
         </Table>
       </Card>
 
-      <Card title="Priority-based manu listing">
+      <Card title="Priority-based petition listing">
         <ManuPriorityTable manus={manus} scopeLabel={`District: ${district}`} />
       </Card>
     </div>

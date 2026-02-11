@@ -71,7 +71,7 @@ export default function OfficerDashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Taluk officer dashboard"
-        subtitle="Prioritised queue of manus for a specific taluk, focussed on high-risk and severe distress cases."
+        subtitle="Prioritised queue of petitions for a specific taluk, focussed on high-risk and severe distress cases."
         actions={
           <div>
             <label className="block text-xs font-medium text-slate-600">
@@ -94,7 +94,7 @@ export default function OfficerDashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard
-          label="Total manus"
+          label="Total petitions"
           value={manus.length}
           tone="primary"
           onClick={() => setFilter("ALL")}
@@ -146,7 +146,7 @@ export default function OfficerDashboardPage() {
         />
       </Card>
 
-      <Card title="Top manus to address now">
+      <Card title="Top petitions to address now">
         <ManuPriorityCardList
           manus={(() => {
             if (filter === "HIGH_CRITICAL") return highAndCritical;

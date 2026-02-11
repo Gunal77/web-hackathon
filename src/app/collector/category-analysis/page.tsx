@@ -126,7 +126,7 @@ export default function CollectorCategoryAnalysisPage() {
                 <div>
                   <div className="font-semibold">{row.category}</div>
                   <div className="text-xs text-slate-500">
-                    High &amp; critical manus:{" "}
+                    High &amp; critical petitions:{" "}
                     {row.byRisk.High + row.byRisk.Critical}
                   </div>
                 </div>
@@ -142,7 +142,7 @@ export default function CollectorCategoryAnalysisPage() {
             ))}
             {topDistress.length === 0 && (
               <li className="text-sm text-slate-600">
-                No severe distress manus in the current selection.
+                No severe distress petitions in the current selection.
               </li>
             )}
           </ul>

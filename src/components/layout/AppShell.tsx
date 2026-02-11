@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { HeaderBar } from "@/components/layout/HeaderBar";
 
@@ -10,7 +11,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex h-screen max-h-screen">
         <Sidebar />
         <div className="flex min-w-0 flex-1 flex-col">
-          <HeaderBar />
+          <Suspense fallback={<header className="h-16 border-b border-surface-100 bg-white/90" />}>
+            <HeaderBar />
+          </Suspense>
           <main className="flex-1 overflow-y-auto bg-surface-50">
             <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
               {children}

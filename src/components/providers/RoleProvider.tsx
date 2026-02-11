@@ -17,7 +17,7 @@ interface RoleContextValue {
 
 const RoleContext = createContext<RoleContextValue | undefined>(undefined);
 
-const ROLE_STORAGE_KEY = "manu-platform-role";
+const ROLE_STORAGE_KEY = "petition-platform-role";
 
 export function RoleProvider({ children }: { children: ReactNode }) {
   const [role, setRoleState] = useState<UserRole>("COLLECTOR");

@@ -20,7 +20,7 @@ export function ManuPriorityTable({
   const sorted = sortByPriority(manus);
 
   const headers = [
-    "Manu ID",
+    "Petition ID",
     "Citizen",
     "District / Taluk",
     "Department",

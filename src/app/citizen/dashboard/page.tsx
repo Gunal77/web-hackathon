@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ManuCitizenList } from "@/components/manu/ManuCitizenList";
 import { DashboardCard } from "@/components/ui/DashboardCard";
@@ -9,10 +10,13 @@ import { TrackingTimeline } from "@/components/tracking/TrackingTimeline";
 import { districtTaluks, tamilNaduDistricts } from "@/lib/mock-data/manus";
 
 export default function CitizenDashboardPage() {
+  const searchParams = useSearchParams();
   const { manus, addManu } = useManus();
   const [searchId, setSearchId] = useState("");
   const [district, setDistrict] = useState("");
   const [taluk, setTaluk] = useState("");
+
+  const headerQuery = searchParams.get("q")?.trim().toLowerCase() ?? "";
   const [showCreate, setShowCreate] = useState(false);
   const [selectedManuId, setSelectedManuId] = useState<string | null>(null);
   const [formDistrict, setFormDistrict] = useState("");
@@ -20,12 +24,22 @@ export default function CitizenDashboardPage() {
 
   const filtered = useMemo(() => {
     return manus.filter((m) => {
-      if (searchId && !m.id.includes(searchId.trim())) return false;
+      const q = (headerQuery || searchId?.trim() || "").toLowerCase();
+      if (q) {
+        const matches =
+          m.id.toLowerCase().includes(q) ||
+          m.district.toLowerCase().includes(q) ||
+          m.taluk.toLowerCase().includes(q) ||
+          m.title.toLowerCase().includes(q) ||
+          (m.descriptionText?.toLowerCase().includes(q) ?? false) ||
+          m.citizenName.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
       if (district && m.district !== district) return false;
       if (taluk && m.taluk !== taluk) return false;
       return true;
     });
-  }, [manus, searchId, district, taluk]);
+  }, [manus, searchId, district, taluk, headerQuery]);
 
   const districts = Array.from(new Set(manus.map((m) => m.district)));
   const taluksForDistrict = district
@@ -86,26 +100,26 @@ export default function CitizenDashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Citizen dashboard"
-        subtitle="Track the status of your manus as recorded in the system. This view does not show internal risk or sentiment scoring."
+        subtitle="Track the status of your petitions as recorded in the system. This view does not show internal risk or sentiment scoring."
         actions={
           <button
             type="button"
             onClick={() => setShowCreate(true)}
             className="rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
           >
-            Create new manu
+            Create new petition
           </button>
         }
       />
 
       <DashboardCard
-        title="Filter manus"
-        subtitle="Quickly narrow down to your manu using ID, district or taluk."
+        title="Filter petitions"
+        subtitle="Quickly narrow down to your petition using ID, district or taluk."
       >
         <div className="grid gap-3 md:grid-cols-4">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-              Search by Manu ID
+              Search by Petition ID
             </label>
             <input
               value={searchId}
@@ -163,7 +177,7 @@ export default function CitizenDashboardPage() {
 
       {showCreate && (
         <DashboardCard
-          title="Create a new manu"
+          title="Create a new petition"
           subtitle="Describe your issue in as much detail as possible. Officials will use internal analysis to prioritise cases."
           rightSlot={
             <button
@@ -269,7 +283,7 @@ export default function CitizenDashboardPage() {
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Manu title
+                Petition title
               </label>
               <input
                 name="title"
@@ -279,7 +293,7 @@ export default function CitizenDashboardPage() {
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                Manu description
+                Petition description
               </label>
               <textarea
                 name="descriptionText"
@@ -314,7 +328,7 @@ export default function CitizenDashboardPage() {
                 type="submit"
                 className="rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-indigo-500"
               >
-                Submit manu
+                Submit petition
               </button>
             </div>
           </form>

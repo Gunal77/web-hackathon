@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import "./globals.css";
-import { RoleProvider } from "@/components/providers/RoleProvider";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ManuProvider } from "@/components/providers/ManuProvider";
-import { AppShell } from "@/components/layout/AppShell";
+import { RoleProvider } from "@/components/providers/RoleProvider";
+import { ShellWrapper } from "@/components/layout/ShellWrapper";
 
 export const metadata = {
-  title: "Risk & Sentiment Aware Manu Grievance Intelligence Platform",
+  title: "Risk & Sentiment Aware Petition Grievance Intelligence Platform",
   description:
     "Decision-support dashboards for risk- and sentiment-aware grievance handling over Mudhalvarin Mugavari."
 };
@@ -16,7 +17,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body>
         <RoleProvider>
           <ManuProvider>
-            <AppShell>{children}</AppShell>
+            <AuthProvider>
+              <ShellWrapper>{children}</ShellWrapper>
+            </AuthProvider>
           </ManuProvider>
         </RoleProvider>
       </body>

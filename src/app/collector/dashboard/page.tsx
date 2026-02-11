@@ -156,6 +156,8 @@ function CollectorDashboardContent() {
   const [expandedTaluk, setExpandedTaluk] = useState<string | null>(null);
   const [deptShowAll, setDeptShowAll] = useState(false);
   const [talukShowAll, setTalukShowAll] = useState(false);
+  const searchQuery = searchParams.get("q")?.trim().toLowerCase() ?? "";
+
   useEffect(() => {
     const loaded = loadFilters();
     const qDistrict = searchParams.get("district");
@@ -211,9 +213,20 @@ function CollectorDashboardContent() {
         }
         const lifecycle = mapLifecycleStatus(m);
         if (!statusFilter.includes(lifecycle)) return false;
-        return isWithinRange(m.createdDate, from, to);
+        if (!isWithinRange(m.createdDate, from, to)) return false;
+        if (searchQuery) {
+          const matches =
+            m.id.toLowerCase().includes(searchQuery) ||
+            m.district.toLowerCase().includes(searchQuery) ||
+            m.taluk.toLowerCase().includes(searchQuery) ||
+            m.title.toLowerCase().includes(searchQuery) ||
+            (m.descriptionText?.toLowerCase().includes(searchQuery) ?? false) ||
+            m.citizenName.toLowerCase().includes(searchQuery);
+          if (!matches) return false;
+        }
+        return true;
       }),
-    [allManus, district, from, to, statusFilter]
+    [allManus, district, from, to, statusFilter, searchQuery]
   );
 
   const previousRange = useMemo(() => {

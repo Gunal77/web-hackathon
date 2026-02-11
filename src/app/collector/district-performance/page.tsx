@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useMemo, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CollectorFilters, getInitialRange } from "@/components/collector/CollectorFilters";
 import {
@@ -43,6 +44,8 @@ function isWithinRange(dateStr: string, from: Date, to: Date) {
 }
 
 export default function DistrictPerformancePage() {
+  const searchParams = useSearchParams();
+  const searchQuery = searchParams.get("q")?.trim().toLowerCase() ?? "";
   const { manus } = useManus();
   const [district, setDistrict] = useState("All Districts");
   const [range, setRange] = useState(getInitialRange);
@@ -81,9 +84,20 @@ export default function DistrictPerformancePage() {
   const filtered = useMemo(() => {
     return manus.filter((m) => {
       if (district !== "All Districts" && m.district !== district) return false;
-      return isWithinRange(m.createdDate, range.from, range.to);
+      if (!isWithinRange(m.createdDate, range.from, range.to)) return false;
+      if (searchQuery) {
+        const matches =
+          m.id.toLowerCase().includes(searchQuery) ||
+          m.district.toLowerCase().includes(searchQuery) ||
+          m.taluk.toLowerCase().includes(searchQuery) ||
+          m.title.toLowerCase().includes(searchQuery) ||
+          (m.descriptionText?.toLowerCase().includes(searchQuery) ?? false) ||
+          m.citizenName.toLowerCase().includes(searchQuery);
+        if (!matches) return false;
+      }
+      return true;
     });
-  }, [manus, district, range]);
+  }, [manus, district, range, searchQuery]);
 
   const performance = useMemo(
     () => computeDistrictPerformance(filtered, range.from, range.to),
