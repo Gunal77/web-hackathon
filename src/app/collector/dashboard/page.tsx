@@ -13,7 +13,6 @@ import {
   generateShortSummary,
   getCriticalSentimentType
 } from "@/lib/utils/ai";
-import { DashboardRightSidebar } from "@/components/dashboard/DashboardRightSidebar";
 import type { Manu } from "@/lib/types/manu";
 
 const FILTER_KEY = "collector-dashboard-filters";
@@ -157,25 +156,19 @@ function CollectorDashboardContent() {
   const [expandedTaluk, setExpandedTaluk] = useState<string | null>(null);
   const [deptShowAll, setDeptShowAll] = useState(false);
   const [talukShowAll, setTalukShowAll] = useState(false);
-  const [sidebarDept, setSidebarDept] = useState<string | null>(null);
-  const [sidebarDistrict, setSidebarDistrict] = useState<string | null>(null);
-  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-
   useEffect(() => {
     const loaded = loadFilters();
     const qDistrict = searchParams.get("district");
-    const qDepartment = searchParams.get("department");
     const qFrom = searchParams.get("from");
     const qTo = searchParams.get("to");
 
-    const hasQuery = qDistrict || qDepartment || qFrom || qTo;
+    const hasQuery = qDistrict || qFrom || qTo;
     if (hasQuery) {
       setDistrict(qDistrict || "All Districts");
       setRange({
         from: qFrom ? new Date(qFrom) : loaded.from,
         to: qTo ? new Date(qTo) : loaded.to
       });
-      if (qDepartment) setSidebarDept(qDepartment);
     } else {
       setDistrict(loaded.district);
       setRange({ from: loaded.from, to: loaded.to });
@@ -223,14 +216,6 @@ function CollectorDashboardContent() {
     [allManus, district, from, to, statusFilter]
   );
 
-  const displayFiltered = useMemo(
-    () =>
-      sidebarDept
-        ? filtered.filter((m) => m.departmentCategory === sidebarDept)
-        : filtered,
-    [filtered, sidebarDept]
-  );
-
   const previousRange = useMemo(() => {
     const diffMs = to.getTime() - from.getTime();
     const prevTo = new Date(from.getTime() - 1);
@@ -253,7 +238,7 @@ function CollectorDashboardContent() {
     [allManus, district, previousRange]
   );
 
-  const criticalFiltered = displayFiltered.filter(
+  const criticalFiltered = filtered.filter(
     (m) => m.sentiment === "Severe Distress" || m.riskLevel === "Critical"
   );
 
@@ -287,7 +272,7 @@ function CollectorDashboardContent() {
         completedCount: number;
       }
     >();
-    displayFiltered.forEach((m) => {
+    filtered.forEach((m) => {
       const key = m.departmentCategory;
       if (!map.has(key)) {
         map.set(key, {
@@ -307,14 +292,14 @@ function CollectorDashboardContent() {
       }
     });
     return map;
-  }, [displayFiltered]);
+  }, [filtered]);
 
   const talukMap = useMemo(() => {
     const map = new Map<
       string,
       { total: number; pending: number; escalated: number; critical: number; district: string; taluk: string }
     >();
-    displayFiltered.forEach((m) => {
+    filtered.forEach((m) => {
       const key = `${m.district} · ${m.taluk}`;
       if (!map.has(key)) {
         map.set(key, { total: 0, pending: 0, escalated: 0, critical: 0, district: m.district, taluk: m.taluk });
@@ -339,32 +324,32 @@ function CollectorDashboardContent() {
       const bVal = b[1].critical || b[1].pending;
       return bVal - aVal;
     });
-  }, [displayFiltered]);
+  }, [filtered]);
 
   const kanbanHighPriority = useMemo(
-    () => sortByPriority(displayFiltered).slice(0, 4),
-    [displayFiltered]
+    () => sortByPriority(filtered).slice(0, 4),
+    [filtered]
   );
   const kanbanLongOpen = useMemo(
     () =>
-      [...displayFiltered]
+      [...filtered]
         .sort((a, b) => b.pendingDays - a.pendingDays)
         .slice(0, 4),
-    [displayFiltered]
+    [filtered]
   );
   const kanbanEscalated = useMemo(
     () =>
-      displayFiltered
+      filtered
         .filter((m) => mapLifecycleStatus(m) === "Escalated")
         .slice(0, 4),
-    [displayFiltered]
+    [filtered]
   );
 
   const [showAllCritical, setShowAllCritical] = useState(false);
 
   const petitionsByDept = useMemo(() => {
     const map = new Map<string, Manu[]>();
-    displayFiltered.forEach((m) => {
+    filtered.forEach((m) => {
       const key = m.departmentCategory;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(m);
@@ -373,18 +358,18 @@ function CollectorDashboardContent() {
       arr.sort((a, b) => b.priorityScore - a.priorityScore);
     });
     return map;
-  }, [displayFiltered]);
+  }, [filtered]);
 
   const petitionsByTaluk = useMemo(() => {
     const map = new Map<string, Manu[]>();
-    displayFiltered.forEach((m) => {
+    filtered.forEach((m) => {
       const key = `${m.district} · ${m.taluk}`;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(m);
     });
     map.forEach((arr) => arr.sort((a, b) => b.pendingDays - a.pendingDays));
     return map;
-  }, [displayFiltered]);
+  }, [filtered]);
 
   const criticalDisplayFiltered = useMemo(() => {
     let result = criticalFiltered;
@@ -403,8 +388,8 @@ function CollectorDashboardContent() {
     [criticalDisplayFiltered]
   );
 
-  const totalDeptPetitions = displayFiltered.length;
-  const totalTalukPetitions = displayFiltered.length;
+  const totalDeptPetitions = filtered.length;
+  const totalTalukPetitions = filtered.length;
   const totalCriticalPetitions = criticalFiltered.length;
 
   const totalChange = computePercentChange(
@@ -428,8 +413,7 @@ function CollectorDashboardContent() {
   }
 
   return (
-    <div className="flex gap-6">
-      <div className="min-w-0 flex-1 space-y-6">
+    <div className="space-y-6">
       <PageHeader
         title="Tamil Nadu Petitions – Governance Dashboard"
         subtitle="Monitor petitions across districts, departments, taluks, and AI sentiment."
@@ -529,17 +513,6 @@ function CollectorDashboardContent() {
             }
           )}
         </div>
-      </div>
-
-      {/* Mobile Insights button */}
-      <div className="flex justify-end md:hidden">
-        <button
-          type="button"
-          onClick={() => setMobileSidebarOpen(true)}
-          className="rounded-lg border border-brand-300 bg-brand-50 px-4 py-2 text-xs font-medium text-brand-700"
-        >
-          Insights panel
-        </button>
       </div>
 
       {/* Summary cards */}
@@ -940,67 +913,6 @@ function CollectorDashboardContent() {
           </div>
         </div>
       </div>
-      </div>
-
-      <div className="hidden shrink-0 md:block">
-        <div className="sticky top-4 max-h-[calc(100vh-8rem)] overflow-y-auto rounded-lg border border-surface-100">
-          <DashboardRightSidebar
-            manuscripts={filtered}
-            district={district}
-            dateFrom={from}
-            dateTo={to}
-            sidebarDept={sidebarDept}
-            sidebarDistrict={sidebarDistrict}
-            onSidebarDeptChange={setSidebarDept}
-            onSidebarDistrictChange={(d) => {
-              setSidebarDistrict(d);
-              if (d) setDistrict(d);
-            }}
-            onDashboardDeptFilter={setSidebarDept}
-          />
-        </div>
-      </div>
-
-      {/* Mobile sidebar overlay */}
-      {mobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div
-            className="absolute inset-0 bg-slate-900/50"
-            onClick={() => setMobileSidebarOpen(false)}
-            aria-hidden
-          />
-          <div className="absolute right-0 top-0 h-full w-80 overflow-y-auto bg-white shadow-xl">
-            <div className="sticky top-0 flex justify-end border-b border-surface-100 bg-white p-2">
-              <button
-                type="button"
-                onClick={() => setMobileSidebarOpen(false)}
-                className="rounded p-2 text-slate-500 hover:bg-surface-100"
-                aria-label="Close"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="p-3">
-              <DashboardRightSidebar
-                manuscripts={filtered}
-                district={district}
-                dateFrom={from}
-                dateTo={to}
-                sidebarDept={sidebarDept}
-                sidebarDistrict={sidebarDistrict}
-                onSidebarDeptChange={setSidebarDept}
-                onSidebarDistrictChange={(d) => {
-                  setSidebarDistrict(d);
-                  if (d) setDistrict(d);
-                  setMobileSidebarOpen(false);
-                }}
-                onDashboardDeptFilter={setSidebarDept}
-              embedded
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

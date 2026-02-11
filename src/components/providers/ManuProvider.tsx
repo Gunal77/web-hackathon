@@ -39,11 +39,18 @@ function computePendingDays(createdDate: string): number {
 
 export function ManuProvider({ children }: { children: ReactNode }) {
   const [manus, setManus] = useState<Manu[]>(() =>
-    seededManus.map((m) => ({
-      ...m,
-      pendingDays: computePendingDays(m.createdDate),
-      lastUpdatedDate: m.lastUpdatedDate ?? m.createdDate
-    }))
+    seededManus.map((m) => {
+      // For Resolved, pendingDays = resolution time; don't overwrite
+      const pendingDays =
+        m.status === "Resolved"
+          ? m.pendingDays
+          : computePendingDays(m.createdDate);
+      return {
+        ...m,
+        pendingDays,
+        lastUpdatedDate: m.lastUpdatedDate ?? m.createdDate
+      };
+    })
   );
 
   const addManu = (input: NewManuInput) => {

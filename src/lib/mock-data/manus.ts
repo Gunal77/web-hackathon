@@ -265,6 +265,46 @@ districtTaluks["Madurai"].forEach((taluk) => {
   });
 });
 
+// Department Performance demo data – Resolved petitions with varied completion times
+// Roads: poor – avg 22 days, 40% SLA breach
+// Water Supply: warning – avg 16 days, 25% breach
+// Health: good – avg 8 days, 5% breach
+// Revenue: good – avg 6 days, 0% breach
+// Electricity: warning – avg 18 days, 30% breach
+// Police: poor – avg 20 days, 35% breach
+// Education: good – avg 9 days, 8% breach
+const deptPerfSeeds: { dept: DepartmentCategory; pendingDays: number; status: Manu["status"] }[] = [
+  ...Array(5).fill(null).map((_, i) => ({ dept: "Roads" as DepartmentCategory, pendingDays: 18 + i * 2, status: "Resolved" as const })),
+  ...Array(3).fill(null).map((_, i) => ({ dept: "Roads" as DepartmentCategory, pendingDays: 8 + i, status: "Resolved" as const })),
+  ...Array(4).fill(null).map((_, i) => ({ dept: "Water Supply" as DepartmentCategory, pendingDays: 14 + i * 2, status: "Resolved" as const })),
+  ...Array(4).fill(null).map((_, i) => ({ dept: "Water Supply" as DepartmentCategory, pendingDays: 6 + i, status: "Resolved" as const })),
+  ...Array(6).fill(null).map((_, i) => ({ dept: "Health" as DepartmentCategory, pendingDays: 6 + i, status: "Resolved" as const })),
+  ...Array(2).fill(null).map(() => ({ dept: "Health" as DepartmentCategory, pendingDays: 18, status: "Resolved" as const })),
+  ...Array(5).fill(null).map((_, i) => ({ dept: "Revenue" as DepartmentCategory, pendingDays: 4 + i, status: "Resolved" as const })),
+  ...Array(4).fill(null).map((_, i) => ({ dept: "Electricity" as DepartmentCategory, pendingDays: 16 + i * 2, status: "Resolved" as const })),
+  ...Array(3).fill(null).map((_, i) => ({ dept: "Electricity" as DepartmentCategory, pendingDays: 7 + i, status: "Resolved" as const })),
+  ...Array(5).fill(null).map((_, i) => ({ dept: "Police" as DepartmentCategory, pendingDays: 19 + i, status: "Resolved" as const })),
+  ...Array(2).fill(null).map(() => ({ dept: "Police" as DepartmentCategory, pendingDays: 10, status: "Resolved" as const })),
+  ...Array(5).fill(null).map((_, i) => ({ dept: "Education" as DepartmentCategory, pendingDays: 7 + i, status: "Resolved" as const })),
+  ...Array(1).fill(null).map(() => ({ dept: "Education" as DepartmentCategory, pendingDays: 17, status: "Resolved" as const })),
+];
+const fifteenDaysAgo = new Date();
+fifteenDaysAgo.setDate(fifteenDaysAgo.getDate() - 15);
+deptPerfSeeds.forEach((s, i) => {
+  const district = ["Chennai", "Madurai", "Coimbatore", "Salem"][i % 4];
+  const taluk = (districtTaluks[district] ?? ["Headquarters"])[i % 3];
+  seededManus.push(
+    createManuSeed(counter++, district, taluk, {
+      departmentCategory: s.dept,
+      status: s.status,
+      pendingDays: s.pendingDays,
+      createdDate: fifteenDaysAgo.toISOString(),
+      sentiment: "Neutral",
+      riskLevel: "Low"
+    })
+  );
+});
+
 export const manus: Manu[] = seededManus;
 
 export function getDistricts(): string[] {

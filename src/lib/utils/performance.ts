@@ -67,7 +67,12 @@ export function computeDepartmentPerformance(
 
     if (m.status === "Resolved" || m.status === "In Progress") {
       entry.firstActionCount += 1;
-      entry.firstActionSum += Math.min(m.pendingDays, 3);
+      // First action: typically 1–4 days; longer resolutions imply slower first response
+      const firstActionDays =
+        m.status === "Resolved"
+          ? Math.min(5, Math.max(1, Math.floor(m.pendingDays / 5)))
+          : Math.min(3, m.pendingDays);
+      entry.firstActionSum += firstActionDays;
     }
     if (m.status === "Resolved") {
       entry.completed += 1;
