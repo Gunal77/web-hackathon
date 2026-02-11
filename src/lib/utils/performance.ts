@@ -11,14 +11,22 @@ export interface DepartmentPerformance {
   performance: PerformanceLevel;
 }
 
+export interface DepartmentRate {
+  department: string;
+  count: number;
+  rate: number;
+}
+
 export interface DistrictPerformance {
   district: string;
   total: number;
   critical: number;
+  resolved: number;
   avgResolutionDays: number;
   bestDepartment: string;
   worstDepartment: string;
   riskLevel: "Low" | "Medium" | "High";
+  departmentRates: DepartmentRate[];
   isBest?: boolean;
   needsFocus?: boolean;
 }
@@ -113,7 +121,14 @@ export function computeDistrictPerformance(
 ): DistrictPerformance[] {
   const byDistrict = new Map<
     string,
-    { total: number; critical: number; closureSum: number; completed: number; byDept: Map<string, { total: number; avgDays: number; sumDays: number; count: number }> }
+    {
+      total: number;
+      critical: number;
+      closureSum: number;
+      completed: number;
+      byDeptTotal: Map<string, number>;
+      byDept: Map<string, { total: number; avgDays: number; sumDays: number; count: number }>;
+    }
   >();
 
   manuscripts.forEach((m) => {
@@ -124,6 +139,7 @@ export function computeDistrictPerformance(
         critical: 0,
         closureSum: 0,
         completed: 0,
+        byDeptTotal: new Map(),
         byDept: new Map()
       });
     }
@@ -132,10 +148,11 @@ export function computeDistrictPerformance(
     if (m.sentiment === "Severe Distress" || m.riskLevel === "Critical") {
       entry.critical += 1;
     }
+    const dept = m.departmentCategory;
+    entry.byDeptTotal.set(dept, (entry.byDeptTotal.get(dept) ?? 0) + 1);
     if (m.status === "Resolved") {
       entry.completed += 1;
       entry.closureSum += m.pendingDays;
-      const dept = m.departmentCategory;
       if (!entry.byDept.has(dept)) {
         entry.byDept.set(dept, { total: 0, avgDays: 0, sumDays: 0, count: 0 });
       }
@@ -178,14 +195,26 @@ export function computeDistrictPerformance(
           ? "Medium"
           : "Low";
 
+    const departmentRates: DepartmentRate[] = Array.from(
+      stats.byDeptTotal.entries()
+    )
+      .map(([dept, count]) => ({
+        department: dept,
+        count,
+        rate: stats.total > 0 ? Math.round((count / stats.total) * 100) : 0
+      }))
+      .sort((a, b) => b.count - a.count);
+
     results.push({
       district,
       total: stats.total,
       critical: stats.critical,
+      resolved: stats.completed,
       avgResolutionDays,
       bestDepartment: bestDept,
       worstDepartment: worstDept,
-      riskLevel
+      riskLevel,
+      departmentRates
     });
   });
 

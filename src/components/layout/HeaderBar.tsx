@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useRole } from "@/components/providers/RoleProvider";
 
 function getPageTitle(pathname: string): string {
   if (pathname.startsWith("/collector/district/")) return "Collector · District detail";
@@ -21,8 +20,6 @@ function getPageTitle(pathname: string): string {
 
 export function HeaderBar() {
   const pathname = usePathname();
-  const { role, setRole } = useRole();
-
   const title = getPageTitle(pathname);
 
   return (
@@ -45,19 +42,11 @@ export function HeaderBar() {
             className="w-52 bg-transparent text-xs text-slate-700 outline-none placeholder:text-slate-400"
           />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 rounded-full border border-surface-100 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm">
           <span className="hidden text-[11px] font-medium text-slate-500 md:inline">
             Viewing as
           </span>
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as typeof role)}
-            className="rounded-full border border-surface-100 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-          >
-            <option value="CITIZEN">Citizen</option>
-            <option value="TALUK_OFFICER">Taluk officer</option>
-            <option value="COLLECTOR">District collector</option>
-          </select>
+          <span>District collector</span>
         </div>
         <button
           type="button"

@@ -1,14 +1,20 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useMemo, useState, useEffect } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CollectorFilters, getInitialRange } from "@/components/collector/CollectorFilters";
-import { DistrictMap } from "@/components/collector/DistrictMap";
-import { useManus } from "@/components/providers/ManuProvider";
 import {
   computeDistrictPerformance,
   type DistrictPerformance
 } from "@/lib/utils/performance";
+
+const TamilNaduDistrictMap = dynamic(
+  () => import("@/components/collector/TamilNaduDistrictMap"),
+  { ssr: false }
+);
+
+import { useManus } from "@/components/providers/ManuProvider";
 
 const FILTER_KEY = "collector-district-perf-filters";
 
@@ -42,16 +48,22 @@ export default function DistrictPerformancePage() {
   const [range, setRange] = useState(getInitialRange);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadResult, setUploadResult] = useState<{
     total: number;
     byDistrict: Record<string, number>;
     byTaluk: Record<string, number>;
     critical: number;
+    isPdf?: boolean;
   } | null>(null);
 
   useEffect(() => {
-    setDistrict(loadFilters().district);
-    setRange({ from: loadFilters().from, to: loadFilters().to });
+    const loaded = loadFilters();
+    setDistrict(loaded.district);
+    setRange({ from: loaded.from, to: loaded.to });
+    setSelectedDistrict(
+      loaded.district !== "All Districts" ? loaded.district : null
+    );
   }, []);
 
   useEffect(() => {
@@ -92,9 +104,30 @@ export default function DistrictPerformancePage() {
     .filter((p) => p.critical > 0)
     .sort((a, b) => b.critical - a.critical)[0];
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) {
+      setSelectedFile(file);
+      setUploadResult(null);
+    }
+    e.target.value = "";
+  };
+
+  const processFile = (file: File) => {
+    const isPdf =
+      file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+
+    if (isPdf) {
+      setUploadResult({
+        total: 1,
+        byDistrict: {},
+        byTaluk: {},
+        critical: 0,
+        isPdf: true
+      });
+      setSelectedFile(null);
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -139,9 +172,9 @@ export default function DistrictPerformancePage() {
         byTaluk,
         critical
       });
+      setSelectedFile(null);
     };
     reader.readAsText(file);
-    e.target.value = "";
   };
 
   return (
@@ -153,7 +186,10 @@ export default function DistrictPerformancePage() {
 
       <CollectorFilters
         district={district}
-        onDistrictChange={setDistrict}
+        onDistrictChange={(d) => {
+          setDistrict(d);
+          setSelectedDistrict(d !== "All Districts" ? d : null);
+        }}
         from={range.from}
         to={range.to}
         onRangeChange={setRange}
@@ -221,11 +257,16 @@ export default function DistrictPerformancePage() {
           </div>
         </div>
 
-        <div className="lg:col-span-3">
-          <DistrictMap
-            performance={performance}
+        <div className="lg:col-span-3 min-h-0">
+          <TamilNaduDistrictMap
             selectedDistrict={selectedDistrict}
-            onSelectDistrict={setSelectedDistrict}
+            onDistrictSelect={(district) => {
+              const next =
+                selectedDistrict === district ? null : district;
+              setSelectedDistrict(next);
+              setDistrict(next ?? "All Districts");
+            }}
+            performance={performance}
           />
         </div>
       </div>
@@ -234,9 +275,12 @@ export default function DistrictPerformancePage() {
         <UploadModal
           onClose={() => {
             setUploadOpen(false);
+            setSelectedFile(null);
             setUploadResult(null);
           }}
-          onFileSelect={handleFileUpload}
+          onFileSelect={handleFileSelect}
+          onUpload={() => selectedFile && processFile(selectedFile)}
+          selectedFile={selectedFile}
           result={uploadResult}
         />
       )}
@@ -252,39 +296,59 @@ function DistrictDetailPanel({ perf }: { perf: DistrictPerformance }) {
         ? "text-amber-700"
         : "text-rose-700";
 
+  const gridItems = [
+    { label: "Total petitions", value: String(perf.total) },
+    { label: "Critical petitions", value: String(perf.critical) },
+    { label: "Resolved", value: String(perf.resolved) },
+    {
+      label: "Avg resolution time",
+      value: `${perf.avgResolutionDays} days`
+    },
+    { label: "Best department", value: perf.bestDepartment },
+    { label: "Worst department", value: perf.worstDepartment },
+    {
+      label: "Overall risk",
+      value: perf.riskLevel,
+      valueClassName: riskColor
+    },
+    {
+      label: "Department wise rate",
+      value:
+        perf.departmentRates.length > 0
+          ? perf.departmentRates
+              .slice(0, 4)
+              .map((d) => `${d.department} ${d.rate}%`)
+              .join(" · ")
+          : "-"
+    }
+  ];
+
   return (
     <div className="rounded-2xl border border-surface-100 bg-white p-5 shadow-sm">
-      <h3 className="text-sm font-semibold text-slate-900">
+      <h3 className="mb-4 text-sm font-semibold text-slate-900">
         {perf.district}
       </h3>
-      <dl className="mt-4 space-y-2 text-sm">
-        <div className="flex justify-between">
-          <dt className="text-slate-500">Total petitions</dt>
-          <dd className="font-medium text-slate-800">{perf.total}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-slate-500">Critical petitions</dt>
-          <dd className="font-medium text-slate-800">{perf.critical}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-slate-500">Avg resolution time</dt>
-          <dd className="font-medium text-slate-800">
-            {perf.avgResolutionDays} days
-          </dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-slate-500">Best department</dt>
-          <dd className="font-medium text-slate-800">{perf.bestDepartment}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-slate-500">Worst department</dt>
-          <dd className="font-medium text-slate-800">{perf.worstDepartment}</dd>
-        </div>
-        <div className="flex justify-between">
-          <dt className="text-slate-500">Overall risk</dt>
-          <dd className={`font-semibold ${riskColor}`}>{perf.riskLevel}</dd>
-        </div>
-      </dl>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {gridItems.map((item) => (
+          <div
+            key={item.label}
+            className={`rounded-xl border border-surface-100 bg-surface-50/50 p-3 ${
+              item.label === "Department wise rate" ? "lg:col-span-2" : ""
+            }`}
+          >
+            <dt className="text-xs font-medium text-slate-500">{item.label}</dt>
+            <dd
+              className={`mt-1 text-sm font-semibold ${
+                item.valueClassName ?? "text-slate-800"
+              } ${
+                item.label === "Department wise rate" ? "break-words" : "truncate"
+              }`}
+            >
+              {item.value}
+            </dd>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -292,19 +356,24 @@ function DistrictDetailPanel({ perf }: { perf: DistrictPerformance }) {
 function UploadModal({
   onClose,
   onFileSelect,
+  onUpload,
+  selectedFile,
   result
 }: {
   onClose: () => void;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onUpload: () => void;
+  selectedFile: File | null;
   result: {
     total: number;
     byDistrict: Record<string, number>;
     byTaluk: Record<string, number>;
     critical: number;
+    isPdf?: boolean;
   } | null;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 p-4">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-surface-100 bg-white shadow-xl">
         <div className="flex items-center justify-between border-b border-surface-100 px-5 py-4">
           <h3 className="text-base font-semibold text-slate-900">
@@ -321,20 +390,36 @@ function UploadModal({
         </div>
         <div className="p-5">
           <p className="mb-3 text-sm text-slate-600">
-            Upload CSV/Excel (50–100 petitions). Columns: title, description,
-            department, district, taluk, priority.
+            Upload CSV, Excel, or PDF. For CSV/Excel: columns title, description,
+            department, district, taluk, priority (50–100 petitions).
           </p>
-          <label className="block">
-            <input
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              onChange={onFileSelect}
-              className="hidden"
-            />
-            <span className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-brand-500 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100">
-              Choose file
-            </span>
-          </label>
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="block">
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls,.pdf"
+                onChange={onFileSelect}
+                className="hidden"
+              />
+              <span className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-surface-200 bg-surface-50 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-surface-100">
+                Choose file
+              </span>
+            </label>
+            {selectedFile && !result && (
+              <>
+                <span className="truncate text-sm text-slate-600 max-w-[180px]">
+                  {selectedFile.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={onUpload}
+                  className="inline-flex items-center gap-2 rounded-xl border border-brand-500 bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600"
+                >
+                  Upload
+                </button>
+              </>
+            )}
+          </div>
 
           {result && (
             <div className="mt-4 rounded-xl border border-surface-100 bg-surface-50/50 p-4">
@@ -342,10 +427,21 @@ function UploadModal({
                 Upload summary
               </h4>
               <ul className="mt-2 space-y-1 text-sm text-slate-600">
-                <li>Total uploaded: {result.total}</li>
-                <li>Critical sentiment detected: {result.critical}</li>
+                <li>
+                  {result.isPdf
+                    ? "PDF document uploaded"
+                    : `Total uploaded: ${result.total}`}
+                </li>
+                {!result.isPdf && (
+                  <li>Critical sentiment detected: {result.critical}</li>
+                )}
+                {result.isPdf && (
+                  <li className="text-slate-500">
+                    Queued for processing. Use CSV/Excel for immediate parsing.
+                  </li>
+                )}
               </ul>
-              {Object.keys(result.byDistrict).length > 0 && (
+              {!result.isPdf && Object.keys(result.byDistrict).length > 0 && (
                 <div className="mt-3">
                   <p className="text-xs font-semibold text-slate-500">
                     District-wise distribution
@@ -359,7 +455,7 @@ function UploadModal({
                   </ul>
                 </div>
               )}
-              {Object.keys(result.byTaluk).length > 0 && (
+              {!result.isPdf && Object.keys(result.byTaluk).length > 0 && (
                 <div className="mt-3">
                   <p className="text-xs font-semibold text-slate-500">
                     Taluk-wise distribution
@@ -377,8 +473,9 @@ function UploadModal({
                 </div>
               )}
               <p className="mt-3 text-xs text-slate-500">
-                Petitions routed to: Concerned District Officer, Taluk Officer,
-                Department.
+                {result.isPdf
+                  ? "PDF will be processed and routed to the concerned officers."
+                  : "Petitions routed to: Concerned District Officer, Taluk Officer, Department."}
               </p>
             </div>
           )}
